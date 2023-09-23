@@ -15,7 +15,9 @@ app.use("/auth", authRoute);
 
 //Get refresh_token from the database
 const getRefreshToken = async () => {
-  const response = await fetch("https://veronica-db-server.onrender.com/storetoken/refreshtoken");
+  const response = await fetch(
+    "https://veronica-db-server.onrender.com/storetoken/refreshtoken"
+  );
   const data = await response.json();
   const { token } = data;
 
@@ -36,27 +38,40 @@ setInterval(getAccessTokenFromRefreshToken, 3500 * 1000);
 
 app.post("/next", async (req, res) => {
   const { action } = req.body;
-  switch(action) {
-    case "next": 
+  switch (action) {
+    case "next":
       await nextTrack();
-      res.json({message: "success"});
+      res.json({ message: "success" });
       break;
-    case "details": 
-    try{
+    case "details":
+      try {
         const details = await getSongDetails();
-        const artists = []
+        const artists = [];
 
-        details.item.artists.forEach(artist => {
-          artists.push({name:artist.name});
+        details.item.artists.forEach((artist) => {
+          artists.push({ name: artist.name });
         });
-        const detailsJSON = { name: details.item.name, popularity: details.item.popularity, releaseDate: details.item.album.release_date, artists }
+        const detailsJSON = {
+          name: details.item.name,
+          popularity: details.item.popularity,
+          releaseDate: details.item.album.release_date,
+          artists,
+        };
         res.json(detailsJSON);
-    } catch (error) {
-      res.json({ message: "spotify player not active" });
-    }
+      } catch (error) {
+        res.json({ message: "spotify player not active" });
+      }
+      break;
+    case "pause":
+      await pauseSong();
+      res.json("success");
+      break;
+    case "play":
+      await startSong();
+      res.json("success");
       break;
   }
-})
+});
 
 //functions
 const nextTrack = async () => {
@@ -67,13 +82,30 @@ const nextTrack = async () => {
 };
 
 const getSongDetails = async () => {
-  const response = await fetch("https://api.spotify.com/v1/me/player/currently-playing", {
-    method: "GET",
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
+  const response = await fetch(
+    "https://api.spotify.com/v1/me/player/currently-playing",
+    {
+      method: "GET",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    }
+  );
   const data = await response.json();
 
   return data;
+};
+
+const pauseSong = async () => {
+  const response = await fetch("https://api.spotify.com/v1/me/player/pause", {
+    method: "PUT",
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+};
+
+const startSong = async () => {
+  const response = await fetch("https://api.spotify.com/v1/me/player/play", {
+    method: "PUT",
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
 };
 
 app.listen(PORT, () => console.log(`Server started on ${PORT}`));
