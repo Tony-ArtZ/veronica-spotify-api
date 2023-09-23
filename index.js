@@ -34,13 +34,28 @@ getRefreshToken();
 //refresh the access token every one hour
 setInterval(getAccessTokenFromRefreshToken, 3500 * 1000);
 
-app.post("/next", (req, res) => {
+app.post("/next", async (req, res) => {
   const { action } = req.body;
-  if(action == "next") {
-    nextTrack();
-  }
+  switch(action) {
+    case "next": 
+      await nextTrack();
+      res.json({message: "success"});
+      break;
+    case "details": 
+    try{
+        const details = await getSongDetails();
+        const artists = []
 
-  res.json({message: "success"});
+        details.item.artists.forEach(artist => {
+          artists.push({name:artist.name});
+        });
+        const detailsJSON = { name: details.item.name, popularity: details.item.popularity, releaseDate: details.item.album.release_date, artists }
+        res.json(detailsJSON);
+    } catch (error) {
+      res.json({ message: "spotify player not active" });
+    }
+      break;
+  }
 })
 
 //functions
@@ -49,6 +64,16 @@ const nextTrack = async () => {
     method: "POST",
     headers: { Authorization: `Bearer ${accessToken}` },
   });
+};
+
+const getSongDetails = async () => {
+  const response = await fetch("https://api.spotify.com/v1/me/player/currently-playing", {
+    method: "GET",
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  const data = await response.json();
+
+  return data;
 };
 
 app.listen(PORT, () => console.log(`Server started on ${PORT}`));

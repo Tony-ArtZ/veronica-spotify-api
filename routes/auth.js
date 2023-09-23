@@ -4,7 +4,7 @@ import { getTokenAuthorization } from "../utils/accessToken.js";
 const router = Router();
 
 router.get("/authorize", async (req, res) => {
-  const redirect_uri = "http://localhost:8080/auth/redirect";
+  const redirect_uri = "https://veronica-spotify-server.onrender.com/auth/redirect";
 
   let url = "https://accounts.spotify.com/authorize";
   url += "?client_id=" + process.env.Client_ID;
