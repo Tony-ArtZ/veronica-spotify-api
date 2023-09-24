@@ -72,6 +72,7 @@ app.post("/next", async (req, res) => {
       break;
     case "randomSong":
       const data = await randomSong(req.body.genre);
+      console.log(data);
       res.json(data);
       break;
   }
@@ -265,6 +266,9 @@ const randomSong = async (genre) => {
     data.tracks[0].artists.forEach((artist) => {
       artists.push({ name: artist.name });
     });
+  }
+  else {
+    artists.push("unknown");
   }
 
   const responseArtist = await fetch(
