@@ -40,8 +40,12 @@ app.post("/next", async (req, res) => {
   const { action } = req.body;
   switch (action) {
     case "next":
-      await nextTrack();
-      res.json({ message: "success" });
+      try {
+        await nextTrack();
+        res.json({ message: "success" });
+      } catch (error) {
+        res.json({ message: "there was an error" });
+      }
       break;
     case "details":
       try {
@@ -63,17 +67,38 @@ app.post("/next", async (req, res) => {
       }
       break;
     case "pause":
-      await pauseSong();
-      res.json("success");
+      try {
+        await pauseSong();
+        res.json("success");
+      } catch (error) {
+        res.json({ message: "there was an error" });
+      }
       break;
     case "play":
-      await startSong();
-      res.json("success");
+      try {
+        await startSong();
+        res.json("success");
+      } catch (error) {
+        res.json({ message: "there was an error" });
+      }
       break;
     case "randomSong":
-      const data = await randomSong(req.body.genre);
-      console.log(data);
-      res.json(data);
+      try {
+        const data = await randomSong(req.body.genre);
+        console.log(data);
+        res.json(data);
+      } catch (error) {
+        res.json({ message: "there was an error" });
+      }
+      break;
+    case "searchSong":
+      try {
+        const searchSongData = await searchSong(req.body.query);
+        console.log(searchSongData);
+        res.json(searchSongData);
+      } catch (error) {
+        res.json({ message: "there was an error" });
+      }
       break;
   }
 });
@@ -266,8 +291,7 @@ const randomSong = async (genre) => {
     data.tracks[0].artists.forEach((artist) => {
       artists.push({ name: artist.name });
     });
-  }
-  else {
+  } else {
     artists.push("unknown");
   }
 
@@ -286,6 +310,46 @@ const randomSong = async (genre) => {
   );
 
   return { name: data.tracks[0].name, artists };
+};
+
+const searchSong = async (query) => {
+  const response = await fetch(
+    `https://api.spotify.com/v1/search?q=${query}&type=track&limit=1`,
+    {
+      method: "GET",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    }
+  );
+
+  const data = await response.json();
+
+  const uri = data.tracks.items[0].uri;
+
+  const artists = [];
+
+  if (data?.tracks?.items[0]?.artists) {
+    data.tracks.items[0].artists.forEach((artist) => {
+      artists.push({ name: artist.name });
+    });
+  } else {
+    artists.push("unknown");
+  }
+
+  const responseArtist = await fetch(
+    "https://api.spotify.com/v1/me/player/play",
+    {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        uris: [uri],
+      }),
+    }
+  );
+
+  return { name: data.tracks.items[0].name, artists };
 };
 
 app.listen(PORT, () => console.log(`Server started on ${PORT}`));
