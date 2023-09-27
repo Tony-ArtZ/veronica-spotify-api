@@ -36,6 +36,10 @@ getRefreshToken();
 //refresh the access token every one hour
 setInterval(getAccessTokenFromRefreshToken, 3500 * 1000);
 
+app.get("/ping", (req, res) => {
+  res.send("Pong!");
+})
+
 app.post("/next", async (req, res) => {
   const { action } = req.body;
   switch (action) {
